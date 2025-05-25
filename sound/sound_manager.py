@@ -29,15 +29,21 @@ class SoundManager:
         self.sound_cache[key] = audio
         return audio
 
-    def play_note(self, note: int):
+    def play_note(self, note: int, velocity: int = 100):
         try:
             with self.lock:
                 audio = self.load_sound(note)
+
+                # 力度转换为增益（-20dB ~ +0dB 范围）
+                velocity = max(1, min(127, velocity))  # 限制范围
+                gain_db = -20 + (velocity / 127) * 20  # -20 到 0 dB
+                adjusted_audio = audio + gain_db
+
                 play_obj = sa.play_buffer(
-                    audio.raw_data,
-                    num_channels=audio.channels,
-                    bytes_per_sample=audio.sample_width,
-                    sample_rate=audio.frame_rate
+                    adjusted_audio.raw_data,
+                    num_channels=adjusted_audio.channels,
+                    bytes_per_sample=adjusted_audio.sample_width,
+                    sample_rate=adjusted_audio.frame_rate
                 )
                 self.play_objects.append(play_obj)
                 self.play_objects = [obj for obj in self.play_objects if obj.is_playing()]

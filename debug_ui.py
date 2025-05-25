@@ -103,3 +103,24 @@ if st.button("列出所有映射组"):
             st.error(r.text)
     except Exception as e:
         st.error(f"请求失败：{e}")
+
+# --- 解析 MIDI 文件 ---
+st.subheader("解析 MIDI 文件")
+uploaded_file = st.file_uploader("上传 .mid 文件进行解析", type=["mid", "midi"])
+
+if uploaded_file is not None:
+    if st.button("开始解析"):
+        try:
+            files = {"file": (uploaded_file.name, uploaded_file.getvalue())}
+            r = requests.post(f"{API_URL}/parse_midi/", files=files)
+            if r.ok:
+                result = r.json()
+                st.success(f"解析成功！文件名: {result['filename']}")
+                st.markdown("### 通道乐器映射")
+                st.json(result["channel_programs"])
+                st.markdown("### 音符事件（前20条）")
+                st.json(result["events"][:20])
+            else:
+                st.error(f"解析失败：{r.text}")
+        except Exception as e:
+            st.error(f"请求失败：{e}")
